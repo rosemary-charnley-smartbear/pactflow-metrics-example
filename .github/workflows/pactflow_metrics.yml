@@ -1,0 +1,42 @@
+name: PactFlow Metrics Export
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Runs every Monday at 06:00 UTC
+  workflow_dispatch:       # Allow manual trigger too
+
+jobs:
+  export-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch PactFlow metrics
+        id: fetch
+        run: |
+          mkdir -p data
+          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          response=$(curl -s -H "Authorization: Bearer ${{ secrets.PACTFLOW_TOKEN }}" \
+            ${{ secrets.PACTFLOW_BASE_URL }}/metrics)
+          # Add timestamp to the data
+          echo "$response" | jq --arg time "$timestamp" '. + {timestamp: $time}' > temp.json
+
+          # Append to history file
+          if [ -f data/pactflow_metrics_history.json ]; then
+            jq '. += [inputs]' data/pactflow_metrics_history.json temp.json > data/temp_history.json
+            mv data/temp_history.json data/pactflow_metrics_history.json
+          else
+            jq -n --slurpfile new temp.json '$new' > data/pactflow_metrics_history.json
+          fi
+
+          # Also keep a latest copy
+          cp temp.json data/pactflow_metrics_latest.json
+
+      - name: Commit and push JSON
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pactflow_metrics_*.json
+          git commit -m "Update PactFlow metrics [skip ci]" || echo "No changes to commit"
+          git push
