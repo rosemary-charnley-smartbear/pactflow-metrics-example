@@ -5,6 +5,9 @@ on:
     - cron: "0 6 * * 1"  # Runs every Monday at 06:00 UTC
   workflow_dispatch:       # Allow manual trigger too
 
+permissions:
+  contents: write   # <--- this line is critical!
+
 jobs:
   export-metrics:
     runs-on: ubuntu-latest
