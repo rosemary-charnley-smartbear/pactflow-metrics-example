@@ -2852,5 +2852,106 @@
       ]
     },
     "timestamp": "2026-05-18T09:53:19Z"
+  },
+  {
+    "interactions": {
+      "latestInteractionsCount": 10,
+      "latestMessagesCount": 1,
+      "latestInteractionsAndMessagesCount": 11
+    },
+    "pacticipants": {
+      "count": 13,
+      "withMainBranchSetCount": 13
+    },
+    "integrations": {
+      "count": 6
+    },
+    "pactPublications": {
+      "count": 9,
+      "first": "2025-01-08T13:33:52+00:00",
+      "last": "2026-02-13T14:44:53+00:00"
+    },
+    "pactVersions": {
+      "count": 10
+    },
+    "pactRevisionsPerConsumerVersion": {
+      "distribution": {
+        "1": 9
+      }
+    },
+    "verificationResults": {
+      "count": 7,
+      "successCount": 7,
+      "failureCount": 0,
+      "distinctCount": 7,
+      "first": "2025-01-24T13:33:52+00:00",
+      "last": "2025-07-29T13:46:37+00:00"
+    },
+    "verificationResultsPerPactVersion": {
+      "distribution": {
+        "1": 7
+      }
+    },
+    "pacticipantVersions": {
+      "count": 18,
+      "withUserCreatedBranchCount": 16,
+      "withBranchCount": 17,
+      "withBranchSetCount": 17
+    },
+    "webhooks": {
+      "count": 1
+    },
+    "tags": {
+      "count": 7,
+      "distinctCount": 4,
+      "distinctWithPacticipantCount": 6
+    },
+    "triggeredWebhooks": {
+      "count": 1
+    },
+    "webhookExecutions": {
+      "count": 7
+    },
+    "matrix": {
+      "count": -1
+    },
+    "environments": {
+      "count": 2
+    },
+    "deployedVersions": {
+      "count": 13,
+      "userCreatedCount": 13,
+      "currentlyDeployedCount": 12
+    },
+    "releasedVersions": {
+      "count": 0,
+      "currentlySupportedCount": 0
+    },
+    "users": {
+      "activeRegularCount": 7,
+      "activeSystemCount": 5
+    },
+    "teams": {
+      "count": 3
+    },
+    "providerContractPublications": {
+      "count": 2
+    },
+    "providerContractVersions": {
+      "count": 2
+    },
+    "providerContractSelfVerifications": {
+      "count": 19
+    },
+    "crossContractComparisons": {
+      "count": 1
+    },
+    "secrets": {
+      "count": 1,
+      "countsByTeam": [
+        1
+      ]
+    },
+    "timestamp": "2026-05-25T09:57:24Z"
   }
 ]
