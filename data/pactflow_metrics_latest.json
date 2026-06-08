@@ -73,7 +73,7 @@
     "currentlySupportedCount": 0
   },
   "users": {
-    "activeRegularCount": 7,
+    "activeRegularCount": 8,
     "activeSystemCount": 5
   },
   "teams": {
@@ -97,5 +97,5 @@
       1
     ]
   },
-  "timestamp": "2026-06-01T11:23:55Z"
+  "timestamp": "2026-06-08T10:28:27Z"
 }
