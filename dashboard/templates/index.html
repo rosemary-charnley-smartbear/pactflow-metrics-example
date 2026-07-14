@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swagger Contract Testing — Metrics Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b1218;
+      --surface: #111d26;
+      --surface2: #172533;
+      --border: #1f3040;
+      --accent: #85EA2D;
+      --accent-dark: #6bc422;
+      --accent2: #3db89a;
+      --navy: #173647;
+      --success: #85EA2D;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --text: #e2e8f0;
+      --text-muted: #7a9bb0;
+      --radius: 10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .tab {
+      padding: 0.45rem 1.2rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    .tab:hover:not(.active) {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .timestamp-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+    }
+
+    main { padding: 2rem; max-width: 1600px; margin: 0 auto; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ---- Latest: stat tiles ---- */
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 2rem 0 0.75rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .card-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .card-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .card-value.green { color: var(--accent); }
+    .card-value.red { color: var(--danger); }
+    .card-value.purple { color: #4a8fa8; }
+    .card-value.teal { color: var(--accent2); }
+    .card-value.yellow { color: var(--warning); }
+
+    .card-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* verification bar */
+    .verif-bar-wrap {
+      grid-column: span 2;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+    }
+
+    .verif-bar-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .verif-bar {
+      height: 18px;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .verif-bar-success { background: var(--success); }
+    .verif-bar-fail { background: var(--danger); }
+
+    .verif-legend {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
+    .dot.green { background: var(--success); }
+    .dot.red { background: var(--danger); }
+
+    /* date range card */
+    .date-range-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      grid-column: span 2;
+    }
+
+    .date-range-card .card-label { margin-bottom: 0.4rem; }
+    .date-range-row { display: flex; gap: 1.5rem; }
+    .date-item { font-size: 0.78rem; color: var(--text); }
+    .date-item span { color: var(--text-muted); font-size: 0.68rem; display: block; }
+
+    /* distribution card */
+    .dist-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+    }
+    .dist-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      margin-top: 0.3rem;
+      color: var(--text-muted);
+    }
+    .dist-row .dist-val { color: var(--text); font-weight: 600; }
+
+    /* ---- History: charts ---- */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .chart-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 1rem;
+    }
+
+    .chart-card canvas { max-height: 220px; }
+
+    .chart-card.wide {
+      grid-column: span 2;
+    }
+
+    /* loading */
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 700px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card.wide { grid-column: span 1; }
+      header { padding: 0 1rem; }
+      main { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg height="32" viewBox="0 0 95.09 95.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="vertical-align:middle;margin-right:0.6rem">
+      <rect x="2.5" y="2.5" width="90.09" height="90.1" fill="#85EA2D"/>
+      <path d="M90.09 5V90.1H5V5H90.09ZM95.09 0H0V95.1H95.09V0Z" fill="#173647"/>
+      <path d="M28.12 30.6C27.96 32.39 28.18 34.25 28.06 36.06C27.9297 37.8762 27.6892 39.6828 27.34 41.47C26.7401 43.9922 25.184 46.1829 23 47.58C27.28 50.36 27.76 54.67 28 59.05C28.14 61.41 28.08 63.79 28.33 66.13C28.51 67.95 29.21 68.41 31.09 68.47C31.85 68.47 32.64 68.47 33.53 68.47V74.08C27.98 75.02 23.4 73.45 22.28 68.75C21.904 67.0256 21.6732 65.2728 21.59 63.51C21.47 61.63 21.67 59.76 21.53 57.88C21.12 52.74 20.46 51 15.53 50.76V44.37C15.883 44.2897 16.2402 44.2296 16.6 44.19C19.3 44.05 20.45 43.19 21.03 40.56C21.3468 39.0576 21.5474 37.5331 21.63 36C21.6866 33.0546 21.8935 30.1142 22.25 27.19C23 23 25.54 21 29.84 20.77C31.05 20.71 32.28 20.77 33.67 20.77V26.5C33.08 26.5 32.58 26.62 32.06 26.62C28.57 26.5 28.38 27.69 28.12 30.6Z" fill="#173647"/>
+      <path d="M38.47 47.62V47.82C38.4107 48.7788 37.9749 49.6752 37.2574 50.314C36.54 50.9527 35.5992 51.282 34.64 51.23H34.39C33.414 51.1809 32.4975 50.7462 31.842 50.0213C31.1866 49.2965 30.8459 48.341 30.895 47.365C30.9441 46.389 31.3788 45.4725 32.1037 44.817C32.8285 44.1616 33.784 43.8209 34.76 43.87H34.84C35.3246 43.8778 35.8029 43.981 36.2476 44.1737C36.6923 44.3664 37.0947 44.6448 37.4318 44.9931C37.7689 45.3413 38.0341 45.7525 38.2122 46.2033C38.3903 46.654 38.4779 47.1354 38.47 47.62Z" fill="#173647"/>
+      <path d="M51.21 47.5C51.2556 47.9909 51.1945 48.4859 51.0309 48.951C50.8673 49.4161 50.605 49.8403 50.2622 50.1946C49.9193 50.5488 49.5039 50.8248 49.0444 51.0035C48.5849 51.1822 48.0922 51.2595 47.6 51.23C47.1093 51.2702 46.6157 51.2055 46.1519 51.0402C45.6881 50.875 45.2648 50.6129 44.9101 50.2714C44.5554 49.93 44.2775 49.517 44.0947 49.0598C43.9119 48.6027 43.8285 48.1118 43.85 47.62C43.8401 47.5035 43.8401 47.3864 43.85 47.27C43.8839 46.3353 44.2873 45.4524 44.9716 44.8149C45.656 44.1774 46.5653 43.8376 47.5 43.87C47.9896 43.8338 48.4813 43.9023 48.9424 44.0709C49.4036 44.2394 49.8235 44.5041 50.1744 44.8475C50.5254 45.1908 50.7992 45.6049 50.9777 46.0623C51.1563 46.5196 51.2355 47.0097 51.21 47.5Z" fill="#173647"/>
+      <path d="M64.2 47.6C64.08 49.75 62.2 51.55 60.35 51.23C59.8624 51.2313 59.3794 51.1362 58.9287 50.9503C58.478 50.7643 58.0685 50.4911 57.7237 50.1463C57.3789 49.8015 57.1057 49.392 56.9197 48.9413C56.7337 48.4906 56.6387 48.0076 56.64 47.52C56.6506 46.5122 57.0611 45.5498 57.7813 44.8447C58.5014 44.1396 59.4722 43.7494 60.48 43.76C61.4878 43.7706 62.4502 44.1811 63.1553 44.9013C63.8604 45.6214 64.2506 46.5922 64.24 47.6H64.2Z" fill="#173647"/>
+      <path d="M79.47 44.3099V50.6999C79.1879 50.7971 78.8962 50.8642 78.6 50.8999C75.48 51.1099 74.04 52.3999 73.74 55.5199C73.54 57.5199 73.56 59.5199 73.42 61.5199C73.3616 63.7243 73.1578 65.9224 72.81 68.0999C72.01 72.0499 69.55 74.0299 65.47 74.2699C64.16 74.3499 62.85 74.2699 61.47 74.2699V68.6099C62.24 68.6099 62.9 68.5099 63.59 68.4899C66.03 68.4299 66.87 67.6399 67 65.2199C67.14 62.5599 67.2 59.8999 67.3 57.2199C67.48 53.3599 68.53 49.9399 72.1 47.5399C70.1 46.0799 68.43 44.3099 67.98 41.9299C67.48 39.0499 67.32 36.0799 67.04 33.1599C66.89 31.6799 66.89 30.1599 66.75 28.7599C66.61 27.3599 65.47 26.6599 64 26.6399C63.17 26.6399 62.35 26.6399 61.28 26.6399V21.0599C68.01 19.9499 72.65 22.1899 73.08 28.5999C73.26 31.2999 73.24 34.0199 73.4 36.7299C73.4782 38.192 73.7026 39.6426 74.07 41.0599C74.65 43.2799 75.82 44.0599 78.16 44.1699C78.58 44.1899 79 44.2499 79.47 44.3099Z" fill="#173647"/>
+    </svg>
+    <span style="color:var(--text);font-weight:700">Swagger</span><span style="color:var(--accent);font-weight:700"> Contract Testing</span>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab('latest', this)">Latest</button>
+    <button class="tab" onclick="switchTab('history', this)">History</button>
+  </nav>
+  <div class="timestamp-badge" id="ts-badge">Loading...</div>
+</header>
+
+<main>
+  <div id="loading">Loading data&hellip;</div>
+
+  <div id="view-latest" class="view"></div>
+  <div id="view-history" class="view"></div>
+</main>
+
+<script>
+let latestData = null;
+let historyData = null;
+let chartInstances = {};
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function card(label, value, colorClass = '', sub = '') {
+  return `<div class="card">
+    <div class="card-label">${label}</div>
+    <div class="card-value ${colorClass}">${value}</div>
+    ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+  </div>`;
+}
+
+function buildLatest(d) {
+  const el = document.getElementById('view-latest');
+  document.getElementById('ts-badge').textContent = 'As of ' + fmtDate(d.timestamp);
+
+  const vTotal = d.verificationResults.count;
+  const vSuccess = d.verificationResults.successCount;
+  const vFail = d.verificationResults.failureCount;
+  const vPct = vTotal > 0 ? Math.round((vSuccess / vTotal) * 100) : 0;
+  const successW = vTotal > 0 ? (vSuccess / vTotal * 100).toFixed(1) : 0;
+  const failW = vTotal > 0 ? (vFail / vTotal * 100).toFixed(1) : 0;
+
+  const pactDistEntries = Object.entries(d.pactRevisionsPerConsumerVersion.distribution || {});
+  const verifDistEntries = Object.entries(d.verificationResultsPerPactVersion.distribution || {});
+
+  el.innerHTML = `
+    <div class="section-title">Participants & Integrations</div>
+    <div class="cards-grid">
+      ${card('Pacticipants', d.pacticipants.count, 'purple')}
+      ${card('With Main Branch', d.pacticipants.withMainBranchSetCount, 'teal')}
+      ${card('Integrations', d.integrations.count, 'purple')}
+      ${card('Teams', d.teams.count, 'teal')}
+      ${card('Environments', d.environments.count, 'yellow')}
+    </div>
+
+    <div class="section-title">Pacts & Versions</div>
+    <div class="cards-grid">
+      ${card('Pact Publications', d.pactPublications.count, 'purple')}
+      ${card('Pact Versions', d.pactVersions.count, 'teal')}
+      ${card('Pacticipant Versions', d.pacticipantVersions.count, 'purple')}
+      ${card('With User Branch', d.pacticipantVersions.withUserCreatedBranchCount, 'teal')}
+      ${card('With Branch', d.pacticipantVersions.withBranchCount, 'teal')}
+      ${card('With Branch Set', d.pacticipantVersions.withBranchSetCount, 'yellow')}
+      <div class="date-range-card">
+        <div class="card-label">Pact Publication Range</div>
+        <div class="date-range-row">
+          <div class="date-item"><span>First</span>${fmtDate(d.pactPublications.first)}</div>
+          <div class="date-item"><span>Last</span>${fmtDate(d.pactPublications.last)}</div>
+        </div>
+      </div>
+      <div class="dist-card">
+        <div class="card-label">Pact Revisions / Consumer Version</div>
+        ${pactDistEntries.map(([k, v]) => `<div class="dist-row"><span>${k} revision${k !== '1' ? 's' : ''}</span><span class="dist-val">${v} pacts</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-title">Verification Results</div>
+    <div class="cards-grid">
+      ${card('Total Verifications', d.verificationResults.count, 'purple')}
+      ${card('Successful', d.verificationResults.successCount, 'green')}
+      ${card('Failed', d.verificationResults.failureCount, d.verificationResults.failureCount > 0 ? 'red' : 'green')}
+      ${card('Distinct', d.verificationResults.distinctCount, 'teal')}
+      ${card('Success Rate', vPct + '%', vPct >= 90 ? 'green' : vPct >= 70 ? 'yellow' : 'red')}
+      <div class="verif-bar-wrap">
+        <div class="verif-bar-label">Success vs Failure</div>
+        <div class="verif-bar">
+          <div class="verif-bar-success" style="width:${successW}%"></div>
+          <div class="verif-bar-fail" style="width:${failW}%"></div>
+        </div>
+        <div class="verif-legend">
+          <span><span class="dot green"></span>${vSuccess} success</span>
+          <span><span class="dot red"></span>${vFail} failure</span>
+        </div>
+      </div>
+      <div class="date-range-card">
+        <div class="card-label">Verification Result Range</div>
+        <div class="date-range-row">
+          <div class="date-item"><span>First</span>${fmtDate(d.verificationResults.first)}</div>
+          <div class="date-item"><span>Last</span>${fmtDate(d.verificationResults.last)}</div>
+        </div>
+      </div>
+      <div class="dist-card">
+        <div class="card-label">Verifications / Pact Version</div>
+        ${verifDistEntries.map(([k, v]) => `<div class="dist-row"><span>${k} verif${k !== '1' ? 's' : ''}</span><span class="dist-val">${v} versions</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-title">Interactions & Webhooks</div>
+    <div class="cards-grid">
+      ${card('Latest Interactions', d.interactions.latestInteractionsCount, 'purple')}
+      ${card('Latest Messages', d.interactions.latestMessagesCount, 'teal')}
+      ${card('Total (Interactions+Msgs)', d.interactions.latestInteractionsAndMessagesCount, 'yellow')}
+      ${card('Webhooks', d.webhooks.count, 'purple')}
+      ${card('Triggered Webhooks', d.triggeredWebhooks.count, 'teal')}
+      ${card('Webhook Executions', d.webhookExecutions.count, 'yellow')}
+    </div>
+
+    <div class="section-title">Deployments & Releases</div>
+    <div class="cards-grid">
+      ${card('Deployed Versions', d.deployedVersions.count, 'purple')}
+      ${card('User-Created Deploys', d.deployedVersions.userCreatedCount, 'teal')}
+      ${card('Currently Deployed', d.deployedVersions.currentlyDeployedCount, 'green')}
+      ${card('Released Versions', d.releasedVersions.count, 'purple')}
+      ${card('Currently Supported', d.releasedVersions.currentlySupportedCount, 'teal')}
+    </div>
+
+    <div class="section-title">Users, Tags & Contracts</div>
+    <div class="cards-grid">
+      ${card('Active Regular Users', d.users.activeRegularCount, 'purple')}
+      ${card('Active System Users', d.users.activeSystemCount, 'teal')}
+      ${card('Tags', d.tags.count, 'yellow')}
+      ${card('Distinct Tags', d.tags.distinctCount, 'purple')}
+      ${card('Tags w/ Pacticipant', d.tags.distinctWithPacticipantCount, 'teal')}
+      ${card('Provider Contract Pubs', d.providerContractPublications.count, 'purple')}
+      ${card('Provider Contract Versions', d.providerContractVersions.count, 'teal')}
+      ${card('Self Verifications', d.providerContractSelfVerifications.count, 'green')}
+      ${card('Cross-Contract Comparisons', d.crossContractComparisons.count, 'yellow')}
+      ${card('Secrets', d.secrets.count, 'purple')}
+    </div>
+  `;
+}
+
+function mkChartConfig(labels, datasets, yLabel = '') {
+  return {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', maxRotation: 35, font: { size: 10 } },
+          grid: { color: '#1e2235' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { size: 10 } },
+          grid: { color: '#1e2235' },
+          title: yLabel ? { display: true, text: yLabel, color: '#64748b', font: { size: 10 } } : undefined
+        }
+      }
+    }
+  };
+}
+
+function ds(label, data, color, fill = false, yAxisID) {
+  const cfg = {
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: fill ? color + '22' : color + '00',
+    pointBackgroundColor: color,
+    pointRadius: 3,
+    borderWidth: 2,
+    tension: 0.3,
+    fill,
+  };
+  if (yAxisID) cfg.yAxisID = yAxisID;
+  return cfg;
+}
+
+function buildHistory(arr) {
+  const sorted = [...arr].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  const labels = sorted.map(d => fmtDate(d.timestamp));
+
+  const get = key => sorted.map(d => {
+    const parts = key.split('.');
+    let v = d;
+    for (const p of parts) v = v?.[p];
+    return v ?? null;
+  });
+
+  const el = document.getElementById('view-history');
+  el.innerHTML = `
+    <div class="section-title">Trends over ${sorted.length} snapshots</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">Pacticipants & Integrations</div><canvas id="ch-parti"></canvas></div>
+      <div class="chart-card wide"><div class="chart-title">Pact Publications & Versions</div><canvas id="ch-pacts"></canvas></div>
+      <div class="chart-card wide"><div class="chart-title">Verification Results</div><canvas id="ch-verif"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Verification Success Rate (%)</div><canvas id="ch-verifrate"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Pacticipant Versions</div><canvas id="ch-pversions"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Interactions & Messages</div><canvas id="ch-interactions"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Deployed Versions</div><canvas id="ch-deployed"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Users (Active)</div><canvas id="ch-users"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Webhooks & Executions</div><canvas id="ch-webhooks"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Tags</div><canvas id="ch-tags"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Provider Contracts</div><canvas id="ch-provider"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Teams, Environments & Secrets</div><canvas id="ch-teams"></canvas></div>
+    </div>
+  `;
+
+  function mkChart(id, datasets, yLabel) {
+    const ctx = document.getElementById(id).getContext('2d');
+    if (chartInstances[id]) chartInstances[id].destroy();
+    chartInstances[id] = new Chart(ctx, mkChartConfig(labels, datasets, yLabel));
+  }
+
+  // Swagger palette: green #85EA2D, navy #173647, teal #3db89a, amber #fbbf24, red #f87171
+  const C = { green: '#85EA2D', navy: '#4a8fa8', teal: '#3db89a', amber: '#fbbf24', red: '#f87171', dim: '#2e8b6e' };
+
+  mkChart('ch-parti', [
+    ds('Pacticipants', get('pacticipants.count'), C.green, true),
+    ds('With Main Branch', get('pacticipants.withMainBranchSetCount'), C.teal),
+    ds('Integrations', get('integrations.count'), C.amber),
+  ]);
+
+  mkChart('ch-pacts', [
+    ds('Pact Publications', get('pactPublications.count'), C.green, true),
+    ds('Pact Versions', get('pactVersions.count'), C.teal),
+  ]);
+
+  mkChart('ch-verif', [
+    ds('Total', get('verificationResults.count'), C.navy, true),
+    ds('Success', get('verificationResults.successCount'), C.green),
+    ds('Failure', get('verificationResults.failureCount'), C.red),
+    ds('Distinct', get('verificationResults.distinctCount'), C.amber),
+  ]);
+
+  const rates = sorted.map(d => {
+    const total = d.verificationResults.count;
+    const success = d.verificationResults.successCount;
+    return total > 0 ? Math.round((success / total) * 100) : null;
+  });
+  mkChart('ch-verifrate', [ds('Success Rate %', rates, C.green, true)], '%');
+
+  mkChart('ch-pversions', [
+    ds('Total Versions', get('pacticipantVersions.count'), C.green, true),
+    ds('User Branch', get('pacticipantVersions.withUserCreatedBranchCount'), C.teal),
+    ds('With Branch', get('pacticipantVersions.withBranchCount'), C.amber),
+    ds('Branch Set', get('pacticipantVersions.withBranchSetCount'), C.red),
+  ]);
+
+  mkChart('ch-interactions', [
+    ds('Interactions', get('interactions.latestInteractionsCount'), C.green, true),
+    ds('Messages', get('interactions.latestMessagesCount'), C.teal),
+    ds('Combined', get('interactions.latestInteractionsAndMessagesCount'), C.amber),
+  ]);
+
+  mkChart('ch-deployed', [
+    ds('Total Deployed', get('deployedVersions.count'), C.navy, true),
+    ds('User Created', get('deployedVersions.userCreatedCount'), C.teal),
+    ds('Currently Deployed', get('deployedVersions.currentlyDeployedCount'), C.green),
+  ]);
+
+  mkChart('ch-users', [
+    ds('Active Regular', get('users.activeRegularCount'), C.green, true),
+    ds('Active System', get('users.activeSystemCount'), C.teal),
+  ]);
+
+  mkChart('ch-webhooks', [
+    ds('Webhooks', get('webhooks.count'), C.teal),
+    ds('Triggered', get('triggeredWebhooks.count'), C.amber),
+    ds('Executions', get('webhookExecutions.count'), C.green, true),
+  ]);
+
+  mkChart('ch-tags', [
+    ds('Total Tags', get('tags.count'), C.green, true),
+    ds('Distinct', get('tags.distinctCount'), C.teal),
+    ds('With Pacticipant', get('tags.distinctWithPacticipantCount'), C.amber),
+  ]);
+
+  mkChart('ch-provider', [
+    ds('Contract Publications', get('providerContractPublications.count'), C.green, true),
+    ds('Contract Versions', get('providerContractVersions.count'), C.teal),
+    ds('Self Verifications', get('providerContractSelfVerifications.count'), C.dim),
+    ds('Cross-Contract Comparisons', get('crossContractComparisons.count'), C.amber),
+  ]);
+
+  mkChart('ch-teams', [
+    ds('Teams', get('teams.count'), C.green),
+    ds('Environments', get('environments.count'), C.teal),
+    ds('Secrets', get('secrets.count'), C.amber),
+  ]);
+}
+
+async function init() {
+  const [latestRes, historyRes] = await Promise.all([
+    fetch('/api/latest'),
+    fetch('/api/history'),
+  ]);
+  latestData = await latestRes.json();
+  historyData = await historyRes.json();
+
+  document.getElementById('loading').style.display = 'none';
+  buildLatest(latestData);
+  buildHistory(historyData);
+  document.getElementById('view-latest').classList.add('active');
+}
+
+init().catch(err => {
+  document.getElementById('loading').textContent = 'Error loading data: ' + err.message;
+});
+</script>
+</body>
+</html>

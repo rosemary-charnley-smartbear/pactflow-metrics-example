@@ -6,7 +6,7 @@ on:
   workflow_dispatch:       # Allow manual trigger too
 
 permissions:
-  contents: write   # <--- this line is critical!
+  contents: write
 
 jobs:
   export-metrics:
