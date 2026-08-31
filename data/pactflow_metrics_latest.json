@@ -12,16 +12,16 @@
     "count": 6
   },
   "pactPublications": {
-    "count": 9,
+    "count": 8,
     "first": "2025-01-08T13:33:52+00:00",
     "last": "2026-02-13T14:44:53+00:00"
   },
   "pactVersions": {
-    "count": 10
+    "count": 9
   },
   "pactRevisionsPerConsumerVersion": {
     "distribution": {
-      "1": 9
+      "1": 8
     }
   },
   "verificationResults": {
@@ -38,10 +38,10 @@
     }
   },
   "pacticipantVersions": {
-    "count": 18,
-    "withUserCreatedBranchCount": 16,
-    "withBranchCount": 17,
-    "withBranchSetCount": 17
+    "count": 17,
+    "withUserCreatedBranchCount": 14,
+    "withBranchCount": 15,
+    "withBranchSetCount": 15
   },
   "webhooks": {
     "count": 1
@@ -52,10 +52,10 @@
     "distinctWithPacticipantCount": 6
   },
   "triggeredWebhooks": {
-    "count": 1
+    "count": 0
   },
   "webhookExecutions": {
-    "count": 7
+    "count": 0
   },
   "matrix": {
     "count": -1
@@ -97,5 +97,5 @@
       1
     ]
   },
-  "timestamp": "2026-08-24T06:47:07Z"
+  "timestamp": "2026-08-31T12:31:52Z"
 }
